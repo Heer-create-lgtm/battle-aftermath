@@ -232,7 +232,8 @@ def run_outside_area(game_objects):
                 game_map[int(bullet['y'] / TILE_SIZE)][int(bullet['x'] / TILE_SIZE)] in ['W', 'P']):
                 if bullet.get('type') == 'shield' and bullet.get('owner'):
                     bullet['owner'].active_shield_throw = False
-                bullets.remove(bullet)
+                if bullet in bullets:
+                    bullets.remove(bullet)
                 continue
                 
             # Get bullet radius before any checks

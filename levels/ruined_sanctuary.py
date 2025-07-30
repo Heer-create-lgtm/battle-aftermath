@@ -46,15 +46,17 @@ class DragonBoss:
         }
         self.sound_channels = {}  # To track active sound channels
         self.last_attack = 0
-        self.attack_delay = 900  # faster attack cadence
+        self.attack_delay = 850  # tightened attack cadence
         # Internal state for variable attacks
         self._flame_end = 0
         self._last_flame_emit = 0
-        self.projectile_speed = 320  # faster projectiles
+        self.projectile_speed = 320  # phase 1 projectile speed
+        self.move_speed = 80        # phase 1 glide speed
         # Dashing parameters
         self.is_dashing = False
         self._dash_vec = (0, 0)
         self._dash_time = 0
+        self._last_pursuit_dash = 0  # cooldown timer
         # Play intro roar
         if self.sfx["roar"]: self.sfx["roar"].play()
 
@@ -77,6 +79,19 @@ class DragonBoss:
         new_phase = 3 if health_pct < 0.2 else (2 if health_pct < 0.5 else 1)
         if new_phase != self.phase:
             self.phase = new_phase
+            # Phase-based scaling
+            if self.phase == 1:
+                self.attack_delay = 850
+                self.projectile_speed = 320
+                self.move_speed = 80
+            elif self.phase == 2:
+                self.attack_delay = 650
+                self.projectile_speed = 360
+                self.move_speed = 120
+            else:
+                self.attack_delay = 500
+                self.projectile_speed = 400
+                self.move_speed = 150
             self._play_sound("roar")
 
     def update(self, player, current_time, dt):
@@ -84,14 +99,40 @@ class DragonBoss:
         self._update_phase(current_time)
         # Handle dash movement if active
         if self.is_dashing:
+            # Leave flame trail during dash for area denial
+            trail_interval = 0.12
+            if not hasattr(self, '_last_trail_emit'):
+                self._last_trail_emit = 0
+            if current_time - self._last_trail_emit > trail_interval*1000:
+                self._last_trail_emit = current_time
+                if 'flame_trail' not in globals():
+                    globals()['flame_trail'] = []
+                globals()['flame_trail'].append({'x': self.x, 'y': self.y, 'timer': 2})
             self.x += self._dash_vec[0] * dt
             self.y += self._dash_vec[1] * dt
             self._dash_time -= dt
             if self._dash_time <= 0:
                 self.is_dashing = False
         else:
-            # Subtle floating idle motion
+            # Continuous glide toward player
+            vec_x = player.x - self.x
+            vec_y = player.y - self.y
+            dist = math.hypot(vec_x, vec_y) or 1
+            self.x += (vec_x/dist) * self.move_speed * dt
+            self.y += (vec_y/dist) * self.move_speed * dt
+            # Subtle vertical bob for life-like motion
             self.y += math.sin(current_time/500) * 15 * dt
+
+            # Reactive dash to prevent easy circling
+            if current_time - self._last_pursuit_dash > 2500 and dist < 300:
+                self._last_pursuit_dash = current_time
+                self.is_dashing = True
+                dash_speed = self.move_speed * 4  # fast burst
+                self._dash_vec = (vec_x/dist * dash_speed, vec_y/dist * dash_speed)
+                self._dash_time = min(0.6, dist / dash_speed)
+                # Start dash sound
+                if self.sfx.get("wing"):
+                    self.sfx["wing"].play()
 
         actions = None
         if not self.is_dashing and current_time - self.last_attack > self.attack_delay:
@@ -193,6 +234,15 @@ class DragonBoss:
                     actions.append({'type':'meteor','x':px,'y':-60,'angle':math.pi/2,'speed':self.projectile_speed*1.25,
                                      'radius':9,'damage':26,'color':(255,80,0)})
             elif roll < 0.97:
+                # Ring of Fire – full 24-shot flame circle around the boss
+                actions = []
+                if self.sfx.get("fire"):
+                    self.sfx["fire"].play()
+                for i in range(24):
+                    ang = i * (2*math.pi/24)
+                    actions.append({'type':'flame','x':self.x,'y':self.y,'angle':ang,'speed':self.projectile_speed*0.8,
+                                     'radius':6,'damage':15,'color':(255,120,40)})
+            elif roll < 0.985:
                 # Tail swipe – semicircle 18-shot arc
                 actions = []
                 base = math.atan2(player.y - self.y, player.x - self.x)

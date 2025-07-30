@@ -1060,7 +1060,6 @@ def show_god_dialogue(lines):
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_RETURN:
                         waiting = False
-
 def run_tutorial():
     # These are used in the function
     global bullets, player, game_map, current_level_runner, is_throne_room_level
@@ -1251,6 +1250,7 @@ def run_tutorial():
 
         # Win/Loss Condition
         if not zombie.is_alive:
+            show_opening_cinematic()
             run_post_tutorial_scene()
             running = False
         
@@ -1268,6 +1268,106 @@ def run_tutorial():
         pygame.display.flip()
 
     return "COMPLETE"
+
+def show_opening_cinematic():
+    """Display game title screen with opening music for a short cinematic."""
+    # Stop all currently playing sounds and music to ensure clean audio
+    pygame.mixer.stop()
+    stop_music(fade_out=500)
+
+    # Load title image
+    try:
+        title_img = pygame.image.load('assets/sprites/Battle Aftermath.png').convert_alpha()
+        # Scale down if larger than screen
+        if title_img.get_width() > SCREEN_WIDTH * 0.9 or title_img.get_height() > SCREEN_HEIGHT * 0.9:
+            scale_factor = min((SCREEN_WIDTH * 0.9) / title_img.get_width(), (SCREEN_HEIGHT * 0.9) / title_img.get_height())
+            new_size = (int(title_img.get_width() * scale_factor), int(title_img.get_height() * scale_factor))
+            title_img = pygame.transform.smoothscale(title_img, new_size)
+    except Exception:
+        # Fallback to simple text if image missing
+        title_font = pygame.font.Font(None, 96)
+        title_img = title_font.render("Battle Aftermath", True, WHITE)
+
+    title_rect = title_img.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+
+    # Play opening sound (non-looping)
+    opening_channel = None
+    opening_sound = None
+    try:
+        opening_sound = pygame.mixer.Sound('assets/music/opening.ogg')
+        opening_sound.set_volume(0.8)
+        opening_channel = pygame.mixer.find_channel(True)
+        if opening_channel:
+            opening_channel.play(opening_sound)
+    except Exception as e:
+        print(f"Warning: Could not play opening sound: {e}")
+
+    start_time = pygame.time.get_ticks()
+    # Use length of opening sound; default to 4 s
+    duration_ms = int(opening_sound.get_length()*1000) if opening_sound else 4000
+
+    # Simple fade-in effect for first second, hold, then fade-out last second
+    fade_in_time = 1000
+    fade_out_time = 1000
+
+    running_cinematic = True
+    while running_cinematic:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                quit_game()
+
+        elapsed = pygame.time.get_ticks() - start_time
+            # Auto-end after duration_ms
+        if elapsed >= duration_ms:
+            running_cinematic = False
+
+        # Determine alpha for fade effect
+        if elapsed < fade_in_time:
+            alpha = int(255 * elapsed / fade_in_time)
+        elif elapsed > duration_ms - fade_out_time:
+            alpha = int(255 * (duration_ms - elapsed) / fade_out_time)
+        else:
+            alpha = 255
+
+        # Prepare surface with variable alpha and subtle zoom-in effect
+        frame = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+        frame.fill(BLACK)
+
+        # Zoom factor from 0.85 to 1.0 over the cinematic
+        zoom_start = 0.85
+        zoom_end = 1.0
+        zoom_progress = elapsed / duration_ms
+        zoom_factor = zoom_start + (zoom_end - zoom_start) * zoom_progress
+        scaled_size = (int(title_img.get_width() * zoom_factor), int(title_img.get_height() * zoom_factor))
+        img_scaled = pygame.transform.smoothscale(title_img, scaled_size)
+        img_scaled.set_alpha(alpha)
+        img_rect = img_scaled.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2))
+        frame.blit(img_scaled, img_rect)
+
+        # Screen shake & white flash for final hit
+        shake_offset = (0, 0)
+        flash = None
+        flash_alpha = 0
+        flash_win = 300  # duration for start/end flash
+        if elapsed < flash_win:
+            shake_offset = (random.randint(-5,5), random.randint(-5,5))
+            flash_alpha = int(255 * (flash_win - elapsed) / flash_win)
+        elif elapsed > duration_ms - flash_win:
+            shake_offset = (random.randint(-5,5), random.randint(-5,5))
+            flash_alpha = int(255 * (duration_ms - elapsed) / flash_win)
+        if flash_alpha > 0:
+            flash = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            flash.fill(WHITE)
+            flash.set_alpha(flash_alpha)
+            frame.blit(flash, (0,0))
+        screen.blit(frame, shake_offset)
+        pygame.display.flip()
+        clock.tick(60)
+
+    # Ensure opening sound stops
+    if opening_channel:
+        opening_channel.fadeout(500)
+
 
 def run_post_tutorial_scene():
     global game_map
@@ -1971,13 +2071,15 @@ def show_main_menu():
                 elif exit_button_rect.collidepoint(mouse_pos):
                     return "QUIT"
         
-        # Update mouse hover
-        if start_button_rect.collidepoint(mouse_pos):
-            selected_option = 0
-        elif endless_button_rect.collidepoint(mouse_pos):
-            selected_option = 1
-        elif exit_button_rect.collidepoint(mouse_pos):
-            selected_option = 2
+        # Update mouse hover only when the mouse actually moves, so arrow-key
+        # navigation is not immediately overridden each frame.
+        if pygame.mouse.get_rel() != (0, 0):
+            if start_button_rect.collidepoint(mouse_pos):
+                selected_option = 0
+            elif endless_button_rect.collidepoint(mouse_pos):
+                selected_option = 1
+            elif exit_button_rect.collidepoint(mouse_pos):
+                selected_option = 2
         
         # Draw everything
         if background_img:
