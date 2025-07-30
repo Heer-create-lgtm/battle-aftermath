@@ -1,0 +1,8 @@
+# Game Dependencies
+pygame==2.6.1
+numpy>=1.21.0  # Required by some pygame extensions
+
+# Development Dependencies
+pytest>=7.0.0  # For running tests
+black>=22.0.0  # Code formatter
+flake8>=4.0.0  # Linter
