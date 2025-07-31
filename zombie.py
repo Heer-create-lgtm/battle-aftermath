@@ -13,6 +13,9 @@ class Zombie:
         self.is_alive = True
         self.last_attack_time = 0
         
+        # Stun state (in seconds). When >0, zombie is stunned and cannot move.
+        self.stun_timer = 0
+
         # Initialize attack sound (can be overridden by subclasses)
         try:
             self.attack_sound = pygame.mixer.Sound("assets/music/zombie.ogg")

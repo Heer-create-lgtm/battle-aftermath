@@ -164,6 +164,9 @@ def run_endless_mode(game_objects):
 
     # Game specific vars
     zombies = []
+    # Ground Pound visual timers
+    shake_timer = 0.0
+    flash_timer = 0.0
     bullets = []
     kill_count = 0
     game_map = _generate_empty_map()
@@ -216,6 +219,11 @@ def run_endless_mode(game_objects):
     running = True
     while running:
         dt = clock.tick(60) / 1000.0
+        # Decay Ground Pound visual timers
+        if shake_timer > 0:
+            shake_timer -= dt
+        if flash_timer > 0:
+            flash_timer -= dt
 
         # Ensure background music keeps playing (check every 3 seconds)
         if _play_music_main:
@@ -247,6 +255,22 @@ def run_endless_mode(game_objects):
         # Update player physics/state
         keys = pygame.key.get_pressed()
         update_player_state(player, keys, game_map, dt)
+
+        # ---- Ground Pound impact ----
+        if player.gp_triggered:
+            player.gp_triggered = False
+            GP_RADIUS = 250
+            for zb in zombies:
+                dist = math.hypot(zb.x - player.x, zb.y - player.y)
+                if dist <= GP_RADIUS:
+                    zb.stun_timer = 2.0
+                    if dist > 0:
+                        kx = (zb.x - player.x) / dist * 60
+                        ky = (zb.y - player.y) / dist * 60
+                        zb.x += kx
+                        zb.y += ky
+            shake_timer = 0.4
+            flash_timer = 0.15
 
         # -------- Update zombies --------
         for zombie in zombies[:]:
@@ -359,6 +383,14 @@ def run_endless_mode(game_objects):
         flicker_alpha = random.randint(100, 140)
         overlay.set_alpha(flicker_alpha)
         overlay.fill((80, 0, 0))
+
+        # White flash overlay if active
+        if flash_timer > 0:
+            flash_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            flash_surf.fill(WHITE)
+            alpha = int(255 * (flash_timer / 0.15))
+            flash_surf.set_alpha(alpha)
+            screen.blit(flash_surf, (0,0))
         screen.blit(overlay, (0, 0))
 
         # Embers / fire sparks
@@ -384,6 +416,13 @@ def run_endless_mode(game_objects):
         hs_surf = font.render(f"High Score: {high_score}", True, WHITE)
         screen.blit(kills_surf, (20, 20))
         screen.blit(hs_surf, (20, 60))
+
+        # Apply screen shake by offsetting the final frame
+        if shake_timer > 0:
+            offset = (random.randint(-6, 6), random.randint(-6, 6))
+            frame_copy = screen.copy()
+            screen.fill((0, 0, 0))
+            screen.blit(frame_copy, offset)
 
         pygame.display.flip()
 

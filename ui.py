@@ -23,6 +23,12 @@ def draw_ui(screen, player, boss=None, show_blood_counter=False):
     pygame.draw.rect(screen, SHIELD_BAR_BG, (shield_bar_x, shield_bar_y, shield_bar_width, shield_bar_height))
     pygame.draw.rect(screen, SHIELD_BAR_FG, (shield_bar_x, shield_bar_y, shield_bar_width * shield_ratio, shield_bar_height))
 
+    # Ground Pound message
+    if hasattr(player, 'gp_msg_timer') and player.gp_msg_timer > 0:
+        font = pygame.font.Font(None, 36)
+        txt = font.render("GROUND POUND!", True, WHITE)
+        screen.blit(txt, (SCREEN_WIDTH//2 - txt.get_width()//2, SCREEN_HEIGHT - ui_panel_height - 40))
+
     # Health bar
     health_bar_width = 200
     health_bar_height = 20

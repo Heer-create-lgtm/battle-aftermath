@@ -317,6 +317,9 @@ def run_divine_arena():
     bullets = []
     player_bullets = []
     zombies = []
+    # Timers for screen shake / flash visual effects triggered by abilities
+    shake_timer = 0
+    flash_timer = 0
 
     show_dialogue([
         "The arena quakes as the Corrupted War God descends…",
@@ -341,6 +344,31 @@ def run_divine_arena():
             arena_map = [[' ' for _ in range(SCREEN_WIDTH // TILE_SIZE + 1)] for _ in range(SCREEN_HEIGHT // TILE_SIZE + 1)]
         update_player_state(player, keys, arena_map, dt)
         handle_player_input(player, player_bullets, events)
+
+        # --- Decay visual timers ---
+        if shake_timer > 0:
+            shake_timer -= dt
+        if flash_timer > 0:
+            flash_timer -= dt
+
+        # ---- Ground Pound impact (player ability) ----
+        if player.gp_triggered:
+            player.gp_triggered = False
+            GP_RADIUS = 250  # pixels
+            for zb in zombies:
+                dist = math.hypot(zb.x - player.x, zb.y - player.y)
+                if dist <= GP_RADIUS:
+                    # Stun for 2 seconds
+                    zb.stun_timer = 2.0
+                    # Knock-back up to 60 px away from player
+                    if dist > 0:
+                        kx = (zb.x - player.x) / dist * 60
+                        ky = (zb.y - player.y) / dist * 60
+                        zb.x += kx
+                        zb.y += ky
+            # Trigger visual feedback
+            shake_timer = 0.4
+            flash_timer = 0.15
 
         # ---------------- Update existing zombies -------------------
         from special_zombies import random_zombie
@@ -522,6 +550,21 @@ def run_divine_arena():
 
         player.draw(screen)
         draw_ui(screen, player)
+
+        # ---- Flash overlay ----
+        if flash_timer > 0:
+            flash_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            flash_surf.fill((255, 255, 255))
+            alpha = int(255 * (flash_timer / 0.15))
+            flash_surf.set_alpha(alpha)
+            screen.blit(flash_surf, (0, 0))
+
+        # ---- Apply screen shake ----
+        if shake_timer > 0:
+            offset = (random.randint(-6, 6), random.randint(-6, 6))
+            shake_frame = screen.copy()
+            screen.fill((0, 0, 0))
+            screen.blit(shake_frame, offset)
         pygame.display.flip()
 
         # escape when boss dead handled in collision

@@ -47,8 +47,9 @@ A narrative-driven, top-down shooter / action-RPG built with Python 3 and Pygame
 | Fire                      | **Space** |
 | Shield / Guard            | **E** |
 | Sprint                    | **Left Shift** |
-| Reload                    | **R**   |
-| Shield Throw.             | **Q** |
+| Reload                    | **R** |
+| Ground-Pound (charge & release) | **F** (hold) |
+| Shield Throw              | **Q** |
 
 `Esc` currently returns to the main menu or exits certain modes (e.g. Endless).  A universal in-game pause is **not implemented yet**.
 
@@ -56,7 +57,7 @@ A narrative-driven, top-down shooter / action-RPG built with Python 3 and Pygame
 
 ## Game Flow & Levels
 
-1. **Tutorial** – learn basic movement, shooting and shielding.
+1. **Tutorial** – learn movement, sprinting, shooting, shielding, ground-pound charging, and shield-throwing.
 2. **Ruined Sanctuary** – confront a remorseful lesser god; choose power upgrade paths.
 3. **Divine Arena** – boss rush hosted by the corrupted War-God Kratos.
 4. **Python Boss Fight** – survive the burrowing serpent and its minions.

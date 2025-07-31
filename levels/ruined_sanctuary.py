@@ -14,8 +14,8 @@ class DragonBoss:
         import random
         import math
         self.x, self.y = x, y
-        self.health = 1600  # increased for tougher fight
-        self.max_health = 1600
+        self.health = 10  # increased for tougher fight
+        self.max_health = 10
         self.radius = 70
         self.image = None
         try:
@@ -328,6 +328,9 @@ def run_ruined_sanctuary(game_objects=None):
     bullets = []  # boss bullets
     minions = []
     player_bullets = []
+    # Visual effect timers (ground-pound)
+    shake_timer = 0.0
+    flash_timer = 0.0
 
     # Intro dialogue
     show_dialogue([
@@ -355,6 +358,28 @@ def run_ruined_sanctuary(game_objects=None):
             game_map = [[' ' for _ in range(SCREEN_WIDTH // TILE_SIZE + 1)] for _ in range(SCREEN_HEIGHT // TILE_SIZE + 1)]
         update_player_state(player, keys, game_map, dt)
         handle_player_input(player, player_bullets, events)
+
+        # --- Decay visual timers ---
+        if shake_timer > 0:
+            shake_timer -= dt
+        if flash_timer > 0:
+            flash_timer -= dt
+
+        # ---- Ground Pound impact (no damage to Dragon) ----
+        if player.gp_triggered:
+            player.gp_triggered = False
+            GP_RADIUS = 250
+            for m in minions:
+                dist = math.hypot(m.x - player.x, m.y - player.y)
+                if dist <= GP_RADIUS:
+                    m.stun_timer = 2.0
+                    if dist > 0:
+                        kx = (m.x - player.x)/dist * 60
+                        ky = (m.y - player.y)/dist * 60
+                        m.x += kx
+                        m.y += ky
+            shake_timer = 0.4
+            flash_timer = 0.15
 
         # Boss update
         act = boss.update(player, current_time, dt)
@@ -447,6 +472,21 @@ def run_ruined_sanctuary(game_objects=None):
         # Draw player & UI
         player.draw(screen)
         draw_ui(screen, player)
+
+        # ---- Flash overlay ----
+        if flash_timer > 0:
+            flash_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            flash_surf.fill((255, 255, 255))
+            alpha = int(255 * (flash_timer / 0.15))
+            flash_surf.set_alpha(alpha)
+            screen.blit(flash_surf, (0, 0))
+
+        # ---- Apply screen shake ----
+        if shake_timer > 0:
+            offset = (random.randint(-6, 6), random.randint(-6, 6))
+            shake_frame = screen.copy()
+            screen.fill((0, 0, 0))
+            screen.blit(shake_frame, offset)
         pygame.display.flip()
 
 

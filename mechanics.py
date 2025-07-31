@@ -102,7 +102,26 @@ def update_player_state(player, keys, game_map, dt):
         player.stamina += STAMINA_REGEN * dt
         if player.stamina > player.max_stamina:
             player.stamina = player.max_stamina
-    
+
+    # ----- Ground Pound ability processing -----
+    if player.gp_charging:
+        player.gp_charge += dt
+        if player.gp_charge >= 1.0:
+            player.gp_charging = False
+            player.gp_triggered = True
+            player.gp_cooldown = 10.0
+            player.gp_msg_timer = 1.5
+    elif keys[pygame.K_f] and player.gp_cooldown <= 0 and not player.gp_charging:
+        player.gp_charging = True
+        player.gp_charge = 0.0
+    # Cooldown timer
+    if player.gp_cooldown > 0:
+        player.gp_cooldown = max(0, player.gp_cooldown - dt)
+
+    # Message timer decay
+    if hasattr(player, 'gp_msg_timer') and player.gp_msg_timer > 0:
+        player.gp_msg_timer = max(0, player.gp_msg_timer - dt)
+
     # Shield toggle and energy management (hold 'E' to shield)
     if keys[pygame.K_e] and player.shield_energy > 0 and not player.is_reloading:
         player.is_shielding = True

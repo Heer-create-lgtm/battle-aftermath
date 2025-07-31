@@ -1242,11 +1242,40 @@ def run_tutorial():
         draw_bullets()
         draw_ui_if_needed()
 
-        # Tutorial Text
-        tutorial_text_1 = tutorial_font.render("Use SPACE to SHOOT the zombie!", True, WHITE)
-        tutorial_text_2 = tutorial_font.render("Use 'E' to RAISE your SHIELD!", True, WHITE)
-        screen.blit(tutorial_text_1, (SCREEN_WIDTH / 2 - tutorial_text_1.get_width() / 2, 20))
-        screen.blit(tutorial_text_2, (SCREEN_WIDTH / 2 - tutorial_text_2.get_width() / 2, 60))
+        # Tutorial Text - show all controls with styled overlay
+        tutorial_messages = [
+            "WASD to MOVE  |  SHIFT to SPRINT",
+            "Mouse to AIM",
+            "SPACE – SHOOT",
+            "E – SHIELD (hold)",
+            "Q – SHIELD THROW",
+            "R – RELOAD",
+            "F – GROUND-POUND (hold)"
+        ]
+
+        # Pre-render all text surfaces and measure max width / total height
+        text_surfs = [tutorial_font.render(m, True, WHITE) for m in tutorial_messages]
+        max_w = max(ts.get_width() for ts in text_surfs)
+        line_h = text_surfs[0].get_height()
+        total_h = len(text_surfs) * line_h + (len(text_surfs) - 1) * 6  # 6px spacing
+
+        padding = 12
+        box_w = max_w + padding * 2
+        box_h = total_h + padding * 2
+
+        box_x = SCREEN_WIDTH / 2 - box_w / 2
+        box_y = SCREEN_HEIGHT - box_h - 30  # 30px from bottom edge
+
+        # Draw semi-transparent background box
+        overlay = pygame.Surface((box_w, box_h), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 160))  # black with 160 alpha
+        screen.blit(overlay, (box_x, box_y))
+
+        # Blit each line of text centred inside the box
+        current_y = box_y + padding
+        for ts in text_surfs:
+            screen.blit(ts, (SCREEN_WIDTH / 2 - ts.get_width() / 2, current_y))
+            current_y += line_h + 6
 
         # Win/Loss Condition
         if not zombie.is_alive:
@@ -1443,7 +1472,10 @@ def run_boss_level():
     boss.max_trail_duration = 20.0  # Poison puddles last 20 seconds
 
     # Lists & timers for new boss mechanics
-    zombies = []  # snake minions summoned by boss
+    zombies.clear()  # reset snake minion list
+    # Ground Pound visual timers
+    shake_timer = 0.0
+    flash_timer = 0.0
     poison_timer = 0.0  # time until next poison puddle
 
     # Show the boss tutorial dialogue
@@ -1469,6 +1501,28 @@ def run_boss_level():
         keys = pygame.key.get_pressed()
         update_player_state(player, keys, game_map, dt)
         boss.update(player.x, player.y, game_map, dt)
+
+        # Decay Ground-Pound visual timers
+        if shake_timer > 0:
+            shake_timer -= dt
+        if flash_timer > 0:
+            flash_timer -= dt
+
+        # ---- Ground Pound impact ----
+        if player.gp_triggered:
+            player.gp_triggered = False
+            GP_RADIUS = 250
+            for zb in zombies:
+                dist = math.hypot(zb.x - player.x, zb.y - player.y)
+                if dist <= GP_RADIUS:
+                    zb.stun_timer = 2.0
+                    if dist > 0:
+                        kx = (zb.x - player.x)/dist * 60
+                        ky = (zb.y - player.y)/dist * 60
+                        zb.x += kx
+                        zb.y += ky
+            shake_timer = 0.4
+            flash_timer = 0.15
 
         # --- Boss poison trail mechanic ---
         poison_timer -= dt
@@ -1606,6 +1660,19 @@ def run_boss_level():
         draw_bullets()
         draw_ui_if_needed()
 
+        # --- Ground-Pound visuals ---
+        if flash_timer > 0:
+            flash_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            flash_surf.fill(WHITE)
+            flash_surf.set_alpha(int(255 * (flash_timer / 0.15)))
+            screen.blit(flash_surf, (0, 0))
+
+        if shake_timer > 0:
+            offset = (random.randint(-6, 6), random.randint(-6, 6))
+            frame_copy = screen.copy()
+            screen.fill((0, 0, 0))
+            screen.blit(frame_copy, offset)
+
         # Boss Health Bar
         boss_health_bar_width = SCREEN_WIDTH - 40
         health_ratio = boss.health / PYTHON_HEALTH
@@ -1627,6 +1694,19 @@ def run_boss_level():
                 return "MAIN_MENU"
             running = False
             return "GAME_OVER"
+
+        # --- Ground-Pound visuals (render after all other draws) ---
+        if flash_timer > 0:
+            flash_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+            flash_surf.fill(WHITE)
+            flash_surf.set_alpha(int(255 * (flash_timer / 0.15)))
+            screen.blit(flash_surf, (0, 0))
+
+        if shake_timer > 0:
+            offset = (random.randint(-6, 6), random.randint(-6, 6))
+            frame_copy = screen.copy()
+            screen.fill((0, 0, 0))
+            screen.blit(frame_copy, offset)
 
         pygame.display.flip()
 
@@ -1936,6 +2016,21 @@ def main_game():
             draw_gods()
             player.draw(screen)
             draw_ui_if_needed()
+
+            # White flash overlay if active
+            if flash_timer > 0:
+                flash_surf = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+                flash_surf.fill(WHITE)
+                alpha = int(255 * (flash_timer/0.15))
+                flash_surf.set_alpha(alpha)
+                screen.blit(flash_surf, (0,0))
+
+            # Apply screen shake by offsetting final frame
+            if shake_timer > 0:
+                offset = (random.randint(-6,6), random.randint(-6,6))
+                frame_copy = screen.copy()
+                screen.fill((0,0,0))
+                screen.blit(frame_copy, offset)
             
             # Level end check
             dist_to_end = math.hypot(player.x - THRONE_ROOM_END_POS[0], player.y - THRONE_ROOM_END_POS[1])

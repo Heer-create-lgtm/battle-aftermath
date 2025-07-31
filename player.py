@@ -108,6 +108,14 @@ class Player:
             print(f"Warning: Could not load player image. Error: {e}")
             self.original_image = None
 
+        # Ground Pound attributes
+        self.gp_cooldown = 0
+        self.gp_charging = False
+        self.gp_charge = 0.0
+        self.gp_triggered = False
+        self.gp_msg_timer = 0.0
+        self.gp_disabled = False
+
     def reset(self):
         self.health = MAX_HEALTH
         self.stamina = MAX_STAMINA
@@ -241,73 +249,8 @@ class Player:
             return True
         elif not activate and self.is_shielding:
             self.is_shielding = False
-            return True
-        return False
-
-    def update(self, keys, game_map, is_throne_room, dt):
-        # ---- Calm Fury check ----
-        low_hp_threshold = 0.30 * self.max_health
-        if self.health <= low_hp_threshold:
-            if not self.calm_fury_active:
-                # Activate calm fury
-                self.calm_fury_active = True
-                self.speed = self.base_speed * 1.35
-                self.sprint_speed = self.base_sprint_speed * 1.35
-                self.current_bullet_damage = self.base_bullet_damage * 1.5
-        else:
-            if self.calm_fury_active:
-                # Deactivate calm fury
-                self.calm_fury_active = False
-                self.speed = self.base_speed
-                self.sprint_speed = self.base_sprint_speed
-                self.current_bullet_damage = self.base_bullet_damage
-        # Update shield cooldown
-        if self.shield_cooldown > 0:
-            self.shield_cooldown = max(0, self.shield_cooldown - dt)
-
-        # Update cooldown timer for shotgun
-        if self.shotgun_cooldown > 0:
-            self.shotgun_cooldown = max(0, self.shotgun_cooldown - dt)
-
-        # Update timers
-        if self.is_reloading:
-            self.reload_timer -= dt
-            if self.reload_timer <= 0:
-                self.is_reloading = False
-                self.ammo = PLAYER_MAX_AMMO
-        
-        if self.is_invincible:
-            self.invincibility_timer -= dt
-            if self.invincibility_timer <= 0:
-                self.is_invincible = False
-        
-        if self.sprint_penalty_timer > 0:
-            self.sprint_penalty_timer -= dt
-
-        # Update shield logic based on whether the key is pressed
-        # Cannot raise shield while it is thrown (active_shield_throw)
-        shield_key_pressed = keys[pygame.K_e] and not is_throne_room and self.shield_energy > 0 and not self.active_shield_throw
-        self.toggle_shield(shield_key_pressed)
-        
-        # Deplete shield energy when active
-        if self.is_shielding and not is_throne_room:
-            self.shield_energy = max(0, self.shield_energy - PLAYER_SHIELD_DEPLETION_RATE * dt)
-            if self.shield_energy <= 0:
-                self.is_shielding = False
-        # Regenerate shield energy when not in use
-        elif not self.is_shielding and self.shield_energy < PLAYER_MAX_SHIELD_ENERGY:
-            self.shield_energy = min(PLAYER_MAX_SHIELD_ENERGY, 
-                                  self.shield_energy + PLAYER_SHIELD_REGEN_RATE * dt)
-
-        self.handle_input_and_movement(keys, game_map, is_throne_room, dt)
 
     def handle_input_and_movement(self, keys, game_map, is_throne_room, dt):
-        # Rotation (arrow keys or A/D)
-        if keys[pygame.K_LEFT] or keys[pygame.K_a]:
-            self.angle -= self.rot_speed * dt
-        if keys[pygame.K_RIGHT] or keys[pygame.K_d]:
-            self.angle += self.rot_speed * dt
-
         # Reloading - can't reload while shielding
         if keys[pygame.K_r] and not is_throne_room and not self.is_shielding and not self.is_reloading:
             self.start_reload()
