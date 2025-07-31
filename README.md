@@ -68,26 +68,6 @@ A narrative-driven, top-down shooter / action-RPG built with Python 3 and Pygame
 Hidden collectibles (`collection1-5.png`) are scattered across areas – shoot crates/pillars or explore to reveal them.
 
 ---
-
-## Build & Deployment
-
-This is a desktop title.  Two easy ways to distribute:
-
-1. **Run from source** (dev-friendly)
-   ```bash
-   git clone https://github.com/<your-org>/zense-game-dev.git
-   cd zense-game-dev
-   python3 -m pip install -r requirements.txt
-   python3 main.py
-   ```
-2. **Generate a standalone executable** (share with friends)
-   ```bash
-   python3 -m pip install pyinstaller
-   pyinstaller --onefile --add-data "assets:assets" main.py
-   dist/main   # on macOS/Linux (or dist\main.exe on Windows)
-   ```
-   Distribute the single file plus `assets/` directory.
-
 ## Assets & Directory Layout
 
 ```
@@ -111,22 +91,4 @@ settings.py       # Global constants (tile size, colours, etc.)
 | Guard / Block | E (hold) | Raise shield to block frontal damage while draining shield energy. |
 | Calm Fury | Passive | When HP <30 %, gain +35 % move speed & +50 % bullet damage. |
 
----
-
-## Troubleshooting
-
-1. **No audio?** Ensure your output device is set correctly and `pygame` detected the mixer. On Linux servers/headless, set `SDL_AUDIODRIVER=dummy` to run without sound.
-2. **Black window / low FPS?** Your iGPU may struggle at 2 K. Lower `WINDOW_SCALE` or disable vsync in `settings.py`.
-3. **Asset loading errors** confirm the working directory is the project root so relative paths like `assets/music/chainsaw.ogg` resolve.
-
----
-
-## Contributing / TODO
-
-- Implement global **pause menu** (Esc) that freezes entities and shows settings.
-- Balance boss health & damage values.
-- Add keyboard remapping & game-pad support.
-- Optimise asset loading (currently synchronous).
-
-Pull-requests welcome!  Feel free to fork and experiment.
 ---
