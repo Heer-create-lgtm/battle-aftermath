@@ -14,8 +14,8 @@ class DragonBoss:
         import random
         import math
         self.x, self.y = x, y
-        self.health = 10  # increased for tougher fight
-        self.max_health = 10
+        self.health = 1600 
+        self.max_health = 1600
         self.radius = 70
         self.image = None
         try:

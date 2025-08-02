@@ -42,6 +42,10 @@ last_checkpoint = None  # dict with keys: level, x, y, angle
 # Counts how many times scientist has revived the hero (for varied dialogue)
 revival_count = 0
 
+# Timers for global visual effects (in seconds)
+flash_timer = 0.0  # remaining white flash duration
+shake_timer = 0.0  # remaining screen shake duration
+
 # --- Scene state management ---
 game_state = "START"
 
@@ -1062,7 +1066,7 @@ def show_god_dialogue(lines):
                         waiting = False
 def run_tutorial():
     # These are used in the function
-    global bullets, player, game_map, current_level_runner, is_throne_room_level
+    global bullets, player, game_map, current_level_runner, is_throne_room_level, flash_timer, shake_timer
     current_level_runner = run_tutorial
     
     # Initialize sounds with error handling
@@ -1456,7 +1460,7 @@ def run_post_tutorial_scene():
 
 def run_boss_level():
     # These are used in the function
-    global bullets, player, game_map, current_level_runner, is_throne_room_level
+    global bullets, player, game_map, current_level_runner, is_throne_room_level, flash_timer, shake_timer
     current_level_runner = run_boss_level
 
     player.reset()

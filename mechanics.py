@@ -45,8 +45,15 @@ def update_player_state(player, keys, game_map, dt):
 
     # Movement
     dx, dy = 0, 0
-    is_sprinting = keys[pygame.K_LSHIFT] and player.stamina > 0
+
+    # Consider either Shift key for sprint attempt
+    shift_pressed = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
+
+    # Determine current movement speed (must be set before using in position update)
+    is_sprinting = shift_pressed and player.stamina > 0
     speed = SPRINT_SPEED if is_sprinting else PLAYER_SPEED
+
+    # --- Direction input (WASD) ---
 
     if keys[pygame.K_w]:
         dy -= 1
@@ -93,15 +100,17 @@ def update_player_state(player, keys, game_map, dt):
     mouse_x, mouse_y = pygame.mouse.get_pos()
     player.angle = math.atan2(mouse_y - player.y, mouse_x - player.x)
 
-    # Stamina management
-    if is_sprinting and (dx != 0 or dy != 0):
-        player.stamina -= STAMINA_COST * dt
-        if player.stamina < 0:
-            player.stamina = 0
-    elif player.stamina < player.max_stamina:
-        player.stamina += STAMINA_REGEN * dt
-        if player.stamina > player.max_stamina:
-            player.stamina = player.max_stamina
+    # -------- Stamina management --------
+    # Deplete only while actually sprint-moving
+    if shift_pressed and (dx != 0 or dy != 0) and player.stamina > 0:
+        player.stamina = max(0, player.stamina - STAMINA_COST * dt)
+    # Regenerate only when Shift is NOT held
+    elif not shift_pressed and player.stamina < player.max_stamina:
+        player.stamina = min(player.max_stamina, player.stamina + STAMINA_REGEN * dt)
+
+    # Re-evaluate sprinting after stamina change
+    is_sprinting = shift_pressed and player.stamina > 0
+    speed = SPRINT_SPEED if is_sprinting else PLAYER_SPEED
 
     # ----- Ground Pound ability processing -----
     if player.gp_charging:
