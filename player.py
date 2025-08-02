@@ -270,7 +270,8 @@ class Player:
             else:
                 current_speed = self.speed
         
-        if not is_sprinting and self.stamina < MAX_STAMINA:
+        # Regenerate stamina only when Shift is NOT held
+        if not (keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]) and self.stamina < MAX_STAMINA:
             self.stamina += STAMINA_REGEN_RATE * dt
             if self.stamina > MAX_STAMINA:
                 self.stamina = MAX_STAMINA

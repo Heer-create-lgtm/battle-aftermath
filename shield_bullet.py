@@ -28,12 +28,14 @@ def update_shield_bullet(bullet: dict, bullets: list, dt: float, game_map, owner
             if tile in ['W', 'P']:
                 bullet['angle'] = math.atan2(-math.sin(bullet['angle']), -math.cos(bullet['angle']))
                 bullet['bounces'] = bullet.get('bounces',0)+1
+                bullet['returning'] = True
         else:
-            # Out of bounds – treat as lost
-            owner_player.active_shield_throw = False
-            if bullet in bullets:
-                bullets.remove(bullet)
-            return True
+            # Went off-map: trigger immediate return instead of deleting.
+            bullet['returning'] = True
+            # Recompute angle toward player so it heads back.
+            dx = owner_player.x - bullet['x']
+            dy = owner_player.y - bullet['y']
+            bullet['angle'] = math.atan2(dy, dx)
 
     # ----- Zombie bounce + damage -----
     if zombies is not None:
