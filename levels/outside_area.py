@@ -57,6 +57,9 @@ def run_outside_area(game_objects):
     collectible = None  # Will appear after crate destroyed
     door_open = False  # Will become True after collecting 5 zombie blood samples
     door_rect = pygame.Rect(SCREEN_WIDTH//2 - 40, SCREEN_HEIGHT - 120, 80, 40)
+
+    # Font for door interaction prompt
+    instruction_font = pygame.font.SysFont(None, 28)  # default font size 28
     # Pre-generate decorative tree positions so they stay consistent each frame
     tree_positions = [
         (random.randint(40, SCREEN_WIDTH - 40), random.randint(40, SCREEN_HEIGHT - 160))
@@ -210,6 +213,10 @@ def run_outside_area(game_objects):
             # Highlight door when player is nearby
             if math.hypot(player.x - door_rect.centerx, player.y - door_rect.centery) < 100:
                 pygame.draw.rect(screen, (255, 255, 100), door_rect.inflate(10, 10), 2)
+                # Draw on-screen prompt
+                prompt_text = instruction_font.render("Press  [E]  to  Enter", True, WHITE)
+                screen.blit(prompt_text, (door_rect.centerx - prompt_text.get_width() // 2,
+                                          door_rect.top - 30))
         
         # Check if the player enters the open door
         if door_open:
