@@ -20,9 +20,9 @@ from settings import (
     PLAYER_START_X, PLAYER_START_Y, PLAYER_START_ANGLE, PLAYER_SPEED,
     PLAYER_SPRINT_SPEED, PLAYER_ROT_SPEED, MAX_HEALTH, MAX_STAMINA,
     PLAYER_RADIUS, PLAYER_MAX_AMMO, PLAYER_MAX_SHIELD_ENERGY, PLAYER_IMAGE_SIZE,
-    PLAYER_RELOAD_TIME, PLAYER_SHIELD_DEPLETION_RATE, PLAYER_SHIELD_REGEN_RATE, PLAYER_BULLET_DAMAGE,
+    PLAYER_RELOAD_TIME, PLAYER_BULLET_DAMAGE,
     STAMINA_DEPLETION_RATE, STAMINA_SPRINT_PENALTY_DURATION, STAMINA_REGEN_RATE,
-    TILE_SIZE, PLAYER_INVINCIBILITY_DURATION, HERO_BLOOD_COLOR
+    TILE_SIZE, HERO_BLOOD_COLOR
 )
 
 class Player:
@@ -169,25 +169,6 @@ class Player:
         elif self.ammo == 0 and not self.is_reloading:
             self.start_reload()
         return None
-        if self.ammo > 0 and not self.is_reloading:
-            self.ammo -= 1
-            if self.shotgun_sound:
-                try:
-                    # Find an available channel to play the sound
-                    channel = pygame.mixer.find_channel(True)  # Force find a channel
-                    if channel:
-                        channel.play(self.shotgun_sound)
-                    else:
-                        # If no channel is available, play and stop any existing sound
-                        self.shotgun_sound.stop()
-                        self.shotgun_sound.play()
-                except Exception as e:
-                    print(f"Error playing shotgun sound: {e}")
-            # Return bullet properties including damage
-            return {'x': self.x, 'y': self.y, 'angle': self.angle, 'damage': self.current_bullet_damage}
-        elif self.ammo == 0 and not self.is_reloading:
-            self.start_reload()
-        return None
 
     def start_reload(self):
         if not self.is_reloading and self.ammo < PLAYER_MAX_AMMO:
@@ -239,16 +220,7 @@ class Player:
             'bounces': 0
         }
 
-        self.is_reloading = False
-        self.ammo = PLAYER_MAX_AMMO
 
-    def toggle_shield(self, activate):
-        """Toggle shield on/off. Returns True if state changed, False otherwise."""
-        if activate and not self.is_shielding and self.shield_energy > 0 and not self.is_reloading:
-            self.is_shielding = True
-            return True
-        elif not activate and self.is_shielding:
-            self.is_shielding = False
 
     def handle_input_and_movement(self, keys, game_map, is_throne_room, dt):
         # Reloading - can't reload while shielding

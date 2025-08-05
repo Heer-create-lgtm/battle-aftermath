@@ -137,9 +137,7 @@ def run_boss_level():
     
     return "MENU"  # Shouldn't reach here
 
-def draw_boss_ui(*args, **kwargs):
-    """Deprecated: replaced by ui.draw_ui. This stub keeps backward compatibility."""
-    pass
+
 
 def draw_boss_level(screen, map_data, player, boss, game_state, bullets):
     """Draw the boss level scene."""

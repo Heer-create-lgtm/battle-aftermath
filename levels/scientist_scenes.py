@@ -73,29 +73,7 @@ def show_scientist_after_blood():
     main_fade_in_from_black(screen)
 
     return "BLOOD_QUEST_COMPLETE"
-    """Show the scene after the player turns in the zombie blood samples."""
-    screen = pygame.display.get_surface()
 
-    # Use shared fade helpers for smooth transition
-    from main import fade_to_black as main_fade_to_black, fade_in_from_black as main_fade_in_from_black
-
-    main_fade_to_black(screen)
-
-    scientist_lines = [
-        "Amazing! You've collected enough samples.",
-        "With this, I can start working on a cure.",
-        "But there's something you should know...",
-        "The infection is spreading faster than we anticipated.",
-        "We need to find the source and stop it before it's too late.",
-        "I'll analyze these samples. Be careful out there..."
-    ]
-
-    show_dialogue(scientist_lines)
-
-    main_fade_in_from_black(screen)
-
-    # Inform main loop that the quest is complete
-    return "BLOOD_QUEST_COMPLETE"
 
 
 def check_zombie_blood_quest(player):

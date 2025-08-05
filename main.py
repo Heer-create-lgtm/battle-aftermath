@@ -620,7 +620,7 @@ def check_zombie_blood_quest():
 
 def show_game_over_screen(show_revival=False, allow_revival=False, show_restart_level=True):
     # These are used in the function
-    global current_level_runner  # noqa: F821
+    global current_level_runner
     
     # Play background music if not already playing
     if not background_music:  # If no music is playing
